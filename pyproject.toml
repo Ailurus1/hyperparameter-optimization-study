@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hyperparameter-optimization-study"
+version = "0.1.0"
+description = "Your project description"
+authors = [
+    { name = "Ailurus1", email = "" }
+]
+dependencies = [
+    "numpy<2.0.0",
+    "scipy"
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = { text = "MIT" }
+
+[tool.hatch.metadata]
+allow-direct-references = true
