@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -9,12 +8,25 @@ import optunahub
 import matplotlib.pyplot as plt
 import numpy as np
 from tabulate import tabulate
+from tqdm import tqdm
+from tqdm.notebook import tqdm as tqdm_notebook
+
+
+def get_tqdm():
+    """Return the appropriate tqdm instance based on the environment."""
+    try:
+        import IPython
+        if IPython.get_ipython().__class__.__name__ == 'ZMQInteractiveShell':
+            return tqdm_notebook
+    except (NameError, ImportError):
+        pass
+    return tqdm
 
 
 class Evaluator:
     def __init__(self) -> None:
         self.results = {}
-        self._logger = logging.getLogger(__name__)
+        self.tqdm = get_tqdm()
         
         self.default_configs = {
             "bbob": [
@@ -51,15 +63,15 @@ class Evaluator:
         if benchmarks is None:
             benchmarks = ["bbob", "bbob_noisy", "zdt"]
 
-        if verbose:
-            logging.basicConfig(level=logging.INFO)
+        optuna.logging.set_verbosity(optuna.logging.INFO if verbose else optuna.logging.WARNING)
 
         table_data = []
         headers = ["Benchmark", "Config", "Sampler", "Best Value"]
+        
+        total_runs = sum(len(self.default_configs[b]) * len(samplers) for b in benchmarks)
+        progress_bar = self.tqdm(total=total_runs, desc="Running benchmarks")
 
-        for bench_name in benchmarks:
-            self._logger.info(f"Running benchmark: {bench_name}")
-            
+        for bench_name in benchmarks:            
             bench_module = optunahub.load_module(f"benchmarks/{bench_name}")
             configs = self.default_configs[bench_name]
             
@@ -69,22 +81,20 @@ class Evaluator:
             }
 
             for config in configs:
-                self._logger.info(f"Configuration: {config}")
                 problem = bench_module.Problem(**config)
 
                 for sampler in samplers:
                     sampler_name = str(sampler.__class__.__name__)
-                    self._logger.info(f"Running sampler: {sampler_name}")
                     
                     study = optuna.create_study(
                         sampler=sampler,
                         directions=problem.directions
                     )
-                    study.optimize(problem, n_trials=n_trials)
+                    study.optimize(problem, n_trials=n_trials, show_progress_bar=False)
 
                     if len(problem.directions) > 1:
-                        values = study.get_pareto_front_target_values()
-                        best_value = np.mean(values) if values else float('inf')
+                        pareto_front = [t.values for t in study.best_trials]
+                        best_value = np.mean(pareto_front) if pareto_front else float('inf')
                     else:
                         best_value = study.best_value
                     
@@ -100,7 +110,10 @@ class Evaluator:
                         sampler_name,
                         f"{best_value:.4e}"
                     ])
+                    
+                    progress_bar.update(1)
 
+        progress_bar.close()
         print("\n## Benchmark Results\n")
         print(tabulate(table_data, headers=headers, tablefmt="pipe"))
 

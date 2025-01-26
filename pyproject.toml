@@ -14,8 +14,16 @@ dependencies = [
     "scipy",
     "optuna",
     "matplotlib",
+    "optunahub",
     "optunahub-registry",
-    "tabulate"
+    "tabulate",
+    "notebook",
+    "ipywidgets",
+    "coco-experiment",
+    "cmaes",
+    "optproblems",
+    "diversipy",
+    "tqdm"
 ]
 requires-python = ">=3.12"
 readme = "README.md"
