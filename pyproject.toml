@@ -11,7 +11,11 @@ authors = [
 ]
 dependencies = [
     "numpy<2.0.0",
-    "scipy"
+    "scipy",
+    "optuna",
+    "matplotlib",
+    "optunahub-registry @ file:deps/optunahub-registry",
+    "tabulate"
 ]
 requires-python = ">=3.12"
 readme = "README.md"
