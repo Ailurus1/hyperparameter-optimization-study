@@ -1,0 +1,3 @@
+[submodule "deps/optunahub-registry"]
+	path = deps/optunahub-registry
+	url = https://github.com/Ailurus1/optunahub-registry/
